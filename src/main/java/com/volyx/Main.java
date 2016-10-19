@@ -1,5 +1,6 @@
 package com.volyx;
 
+import java.util.Date;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -9,14 +10,12 @@ import java.util.concurrent.ScheduledExecutorService;
  */
 public class Main {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         int corePoolSize = Runtime.getRuntime().availableProcessors();
 
         ExecutorService executorService = Executors.newScheduledThreadPool(corePoolSize + 1);
 //        ExecutorService executorService = Executors.newFixedThreadPool(corePoolSize + 1);
-
-        for (int i = 0; i < corePoolSize; i++) {
-            executorService.execute(new Runnable() {
+            final Runnable command = new Runnable() {
                 public void run() {
                     while (true) {
                         System.out.println("Sleeping ...");
@@ -26,10 +25,32 @@ public class Main {
                             e.printStackTrace();
                         }
                         System.out.println("Throwing ... ");
-                        throw new RuntimeException("bad ass!");
+                        throw new RuntimeException("bad ass!" + new Date());
                     }
                 }
-            });
+            };
+
+
+        Runnable commandWithException = new Runnable() {
+            public void run() {
+                try {
+                    command.run();
+                } catch (Throwable t) {
+                    System.out.println("shit");
+                    t.printStackTrace();
+                }
+            }
+        };
+
+        for (int i = 0; i < corePoolSize; i++) {
+            executorService.execute(commandWithException);
         }
+
+        Thread.sleep(10000L);
+        while (true) {
+            Thread.sleep(5000L);
+            executorService.execute(commandWithException);
+        }
+
     }
 }
